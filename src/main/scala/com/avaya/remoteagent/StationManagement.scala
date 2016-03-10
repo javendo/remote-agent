@@ -15,6 +15,7 @@ import com.avaya.csta.physical._
 import com.avaya.csta.registration._
 import com.avaya.csta.tonecollection._
 import com.avaya.mvcs.framework._
+import akka.actor.Actor
 
 object StationManagement {
   case class Station(number: Int)
@@ -54,6 +55,6 @@ class StationManagement extends Actor {
 	println("registered")
       }
     case Unregister =>
-      //unregister
+      println("unregistered")
   }
 }
