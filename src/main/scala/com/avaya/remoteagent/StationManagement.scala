@@ -33,7 +33,7 @@ class StationManagement extends Actor {
     case Register(station) => {
       val devRequest = new GetDeviceId()
       devRequest.setSwitchIPInterface("10.135.34.4")
-      devRequest.setExtension(station.toString)
+      devRequest.setExtension(station.asInstanceOf[String])
       val deviceServices = serviceProvider.getService(classOf[DeviceServices].getName).asInstanceOf[DeviceServices]
       val devResponse = deviceServices.getDeviceID(devRequest)
       val deviceId = devResponse.getDevice()
