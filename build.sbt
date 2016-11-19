@@ -22,7 +22,7 @@ libraryDependencies ++= {
     "castor" % "castor" % "1.0-xml",
     "xerces" % "xercesImpl" % "2.11.0",
     "commons-logging" % "commons-logging" % "1.2",
-    "com.avaya.ph" % "ecsjtapia" % "5.2.0.540",
+    "com.avaya" % "ecsjtapia" % "7.0.0.64",
     "log4j" % "log4j" % "1.2.17",
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
     "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
