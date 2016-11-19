@@ -18,6 +18,7 @@ object StationManagement {
   case class MakeCall(deviceId: DeviceID)
   case class Register(station: Station)
   case class Unregister(station: Station)
+  case class Disconnect()
 }
 
 class StationManagement extends Actor {
@@ -61,6 +62,9 @@ class StationManagement extends Actor {
       unregisterRequest.setDevice(deviceId);
       termSvcs.unregisterDevice(unregisterRequest)
       sender ! deviceId.getExtension
+    }
+    case Disconnect => {
+      serviceProvider.disconnect(true)
     }
   }
 

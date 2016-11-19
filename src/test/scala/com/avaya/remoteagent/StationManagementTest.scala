@@ -18,7 +18,6 @@ class StationManagementTest extends TestKit(ActorSystem("testsystem"))
     with MustMatchers
     with StopSystemAfterAll {
   import StationManagement._
-  val stationManagement = TestActorRef[StationManagement]
   val station = Station(49009, 123456)
   "A StationManagement Actor" must {
     "return a device when it receives a Register message" in {
