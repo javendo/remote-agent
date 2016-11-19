@@ -45,7 +45,7 @@ class StationManagement extends Actor {
       val registerTerminal = registrationServices.registerTerminal(regRequest);
       if (RegistrationConstants.NORMAL_REGISTER == registerTerminal.getCode()) {
         println(s"Device: ${deviceId.getExtension}")
-        sender() ! deviceId.getExtension
+        sender ! deviceId.getExtension
       }
     }
     case MakeCall(deviceId) => {
@@ -60,19 +60,19 @@ class StationManagement extends Actor {
       val unregisterRequest = new UnregisterDevice();
       unregisterRequest.setDevice(deviceId);
       termSvcs.unregisterDevice(unregisterRequest)
-      println("unregistered")
+      sender ! deviceId.getExtension
     }
   }
 
   def getDevice(station: Station): DeviceID = {
-      val devRequest = new GetDeviceId()
-      devRequest.setSwitchIPInterface("10.135.34.4")
-      devRequest.setExtension(station.number.toString())
-      val deviceServices = serviceProvider.getService(classOf[DeviceServices].getName).asInstanceOf[DeviceServices]
-      val devResponse = deviceServices.getDeviceID(devRequest)
-      devResponse.getDevice()
+    val devRequest = new GetDeviceId()
+    devRequest.setSwitchIPInterface("10.135.34.4")
+    devRequest.setExtension(station.number.toString())
+    val deviceServices = serviceProvider.getService(classOf[DeviceServices].getName).asInstanceOf[DeviceServices]
+    val devResponse = deviceServices.getDeviceID(devRequest)
+    devResponse.getDevice()
   }
-  
+
   def pressButton(buttonCode: String, id: DeviceID, physSvcs: PhysicalDeviceServices) = {
     val request = new ButtonPress()
     var translatedButton: String = ""
