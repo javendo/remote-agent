@@ -57,10 +57,10 @@ class StationManagement extends Actor {
     }
     case Unregister(station) => {
       val deviceId = getDevice(station)
-      val termSvcs = serviceProvider.getService(classOf[TerminalServices].getName).asInstanceOf[TerminalServices]
-      val unregisterRequest = new UnregisterDevice();
+      val unregisterRequest = new UnregisterTerminalRequest();
       unregisterRequest.setDevice(deviceId);
-      termSvcs.unregisterDevice(unregisterRequest)
+      val registrationServices = serviceProvider.getService(classOf[RegistrationServices].getName).asInstanceOf[RegistrationServices]
+      val registerTerminal = registrationServices.unregisterTerminal(unregisterRequest)
       sender ! deviceId.getExtension
     }
     case Disconnect => {
