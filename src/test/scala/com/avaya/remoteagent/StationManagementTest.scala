@@ -11,6 +11,7 @@ import akka.testkit.TestActorRef
 import akka.testkit.TestKit
 import akka.util.Timeout
 import akka.testkit.ImplicitSender
+import scala.util.Success
 
 class StationManagementTest extends TestKit(ActorSystem("testsystem"))
     with ImplicitSender
@@ -20,15 +21,15 @@ class StationManagementTest extends TestKit(ActorSystem("testsystem"))
   import StationManagement._
   val station = Station(49009, 123456)
   "A StationManagement Actor" must {
-    "return a device when it receives a Register message" in {
+    "return a Success when it receives a Register message" in {
       stationManagement ! Register(station)
-      expectMsg(10.seconds, station.number.toString())
+      expectMsgClass(10.seconds, classOf[Success[Any]])
     }
   }
   it must {
-    "return a device when it receives an Unegister message" in {
+    "return a Success when it receives an Unegister message" in {
       stationManagement ! Unregister(station)
-      expectMsg(10.seconds, station.number.toString())
+      expectMsgClass(10.seconds, classOf[Success[Any]])
     }
   }
 }

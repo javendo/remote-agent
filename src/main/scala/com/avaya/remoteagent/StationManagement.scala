@@ -12,6 +12,11 @@ import com.avaya.csta.terminal._
 import akka.actor.Actor
 import ch.ecma.csta.binding._
 import ch.ecma.csta.physical._
+import com.avaya.csta.async.AsynchronousCallback
+import com.avaya.csta.async.AsynchronousServices
+import akka.actor.ActorRef
+import scala.util.Success
+import scala.util.Failure
 
 object StationManagement {
   case class Station(number: Int, password: Int)
@@ -35,19 +40,15 @@ class StationManagement extends Actor {
   def receive = {
     case Register(station) => {
       val deviceId = getDevice(station)
-      val regRequest = new RegisterTerminalRequest()
-      regRequest.setDevice(deviceId)
+      val registerRequest = new RegisterTerminalRequest()
+      registerRequest.setDevice(deviceId)
       val login = new LoginInfo()
       login.setPassword(station.password.toString())
       login.setSharedControl(false)
-      regRequest.setLoginInfo(login)
-      regRequest.setLocalMediaInfo(null)
-      val registrationServices = serviceProvider.getService(classOf[RegistrationServices].getName).asInstanceOf[RegistrationServices]
-      val registerTerminal = registrationServices.registerTerminal(regRequest);
-      if (RegistrationConstants.NORMAL_REGISTER == registerTerminal.getCode()) {
-        println(s"Device: ${deviceId.getExtension}")
-        sender ! deviceId.getExtension
-      }
+      registerRequest.setLoginInfo(login)
+      registerRequest.setLocalMediaInfo(null)
+      val asyncSvcs = serviceProvider.getService(classOf[AsynchronousServices].getName).asInstanceOf[AsynchronousServices]
+      asyncSvcs.sendRequest(registerRequest, registrationCallbackBuilder(sender))
     }
     case MakeCall(deviceId) => {
       val physSvcs = serviceProvider.getService(classOf[PhysicalDeviceServices].getName).asInstanceOf[PhysicalDeviceServices]
@@ -59,15 +60,42 @@ class StationManagement extends Actor {
       val deviceId = getDevice(station)
       val unregisterRequest = new UnregisterTerminalRequest();
       unregisterRequest.setDevice(deviceId);
-      val registrationServices = serviceProvider.getService(classOf[RegistrationServices].getName).asInstanceOf[RegistrationServices]
-      val registerTerminal = registrationServices.unregisterTerminal(unregisterRequest)
-      sender ! deviceId.getExtension
+      val asyncSvcs = serviceProvider.getService(classOf[AsynchronousServices].getName).asInstanceOf[AsynchronousServices]
+      asyncSvcs.sendRequest(unregisterRequest, registrationCallbackBuilder(sender))
     }
     case Disconnect => {
       serviceProvider.disconnect(true)
     }
   }
 
+  def registrationCallbackBuilder(actor: ActorRef) = new AsynchronousCallback {
+    def handleResponse(response: Any): Unit = {
+      if (response.isInstanceOf[RegisterTerminalResponse]) {
+        if (response.asInstanceOf[RegisterTerminalResponse].getCode == RegistrationConstants.NORMAL_REGISTER) {
+          actor ! Success(response.asInstanceOf[RegisterTerminalResponse].getDevice.getDeviceIdentifier.getExtension)
+        }
+        else {
+          actor ! Failure(new Exception(response.asInstanceOf[RegisterTerminalResponse].getReason))
+        }
+      }
+      else if (response.isInstanceOf[UnregisterTerminalResponse]) {
+        if (response.asInstanceOf[UnregisterTerminalResponse].getCode == RegistrationConstants.NORMAL_UNREGISTER || response.asInstanceOf[UnregisterTerminalResponse].getCode == RegistrationConstants.CLIENT_REQUESTED_UNREG) {
+          actor ! Success(response.asInstanceOf[UnregisterTerminalResponse].getDevice.getDeviceIdentifier.getExtension)
+        }
+        else {
+          actor ! Failure(new Exception(response.asInstanceOf[UnregisterTerminalResponse].getReason))
+        }
+      }
+      else {
+          actor ! Failure(new Exception(s"This is bad. Asynchronous response is not of valid type: ${response.toString()}"))
+      }
+    }
+    
+    def handleException(exception: Throwable): Unit = {
+      actor ! Failure(exception)
+    }
+  }
+  
   def getDevice(station: Station): DeviceID = {
     val devRequest = new GetDeviceId()
     devRequest.setSwitchIPInterface("10.135.34.4")
