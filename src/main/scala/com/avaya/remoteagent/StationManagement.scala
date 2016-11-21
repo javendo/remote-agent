@@ -69,26 +69,10 @@ class StationManagement extends Actor {
   }
 
   def registrationCallbackBuilder(actor: ActorRef) = new AsynchronousCallback {
-    def handleResponse(response: Any): Unit = {
-      if (response.isInstanceOf[RegisterTerminalResponse]) {
-        if (response.asInstanceOf[RegisterTerminalResponse].getCode == RegistrationConstants.NORMAL_REGISTER) {
-          actor ! Success(response.asInstanceOf[RegisterTerminalResponse].getDevice.getDeviceIdentifier.getExtension)
-        }
-        else {
-          actor ! Failure(new Exception(response.asInstanceOf[RegisterTerminalResponse].getReason))
-        }
-      }
-      else if (response.isInstanceOf[UnregisterTerminalResponse]) {
-        if (response.asInstanceOf[UnregisterTerminalResponse].getCode == RegistrationConstants.NORMAL_UNREGISTER || response.asInstanceOf[UnregisterTerminalResponse].getCode == RegistrationConstants.CLIENT_REQUESTED_UNREG) {
-          actor ! Success(response.asInstanceOf[UnregisterTerminalResponse].getDevice.getDeviceIdentifier.getExtension)
-        }
-        else {
-          actor ! Failure(new Exception(response.asInstanceOf[UnregisterTerminalResponse].getReason))
-        }
-      }
-      else {
-          actor ! Failure(new Exception(s"This is bad. Asynchronous response is not of valid type: ${response.toString()}"))
-      }
+    def handleResponse(response: Any): Unit = response match {
+      case r: RegisterTerminalResponse if r.getCode == RegistrationConstants.NORMAL_REGISTER => actor ! Success(r.getDevice.getDeviceIdentifier)
+      case u: UnregisterTerminalResponse if List(RegistrationConstants.NORMAL_UNREGISTER, RegistrationConstants.CLIENT_REQUESTED_UNREG) contains u.getCode => actor ! Success(u.getDevice.getDeviceIdentifier)
+      case _ => actor ! Failure(new Exception(s"This is bad. Asynchronous response is not of valid type: ${response.toString()}"))
     }
     
     def handleException(exception: Throwable): Unit = {
